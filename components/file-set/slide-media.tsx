@@ -34,7 +34,6 @@ export default function SlideMedia({ asset, index }: SlideMediaProps) {
                 <video
                     key={asset.id}
                     src={asset.url}
-                    muted
                     playsInline
                     controls
                     preload="metadata"
