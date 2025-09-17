@@ -235,12 +235,12 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
                 Shared via GOLD'S YACHT cloud
             </div>
 
-            <FooterActions
+            {/* <FooterActions
                 onChat={handleChat}
                 onOpen={handleOpen}
                 onShare={handleShare}
                 disabled={!current}
-            />
+            /> */}
 
             <Toast>{toast}</Toast>
         </div>
