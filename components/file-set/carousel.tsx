@@ -39,7 +39,7 @@ const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carousel(
                     >
                         <SlideMedia asset={asset} index={index} />
 
-                        <div className="absolute left-6 top-2 rounded-full bg-black/60 px-2 py-1 text-[12px] text-white">
+                        <div className="absolute left-6 top-6 rounded-full bg-black/60 px-2 py-1 text-[12px] text-white">
                             {index === activeIndex
                                 ? activeBadge
                                 : BADGE_LABELS[asset.kind]}
