@@ -27,6 +27,7 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
     );
     const [toast, setToast] = useState<string | null>(null);
     const railRef = useRef<HTMLDivElement>(null);
+    const [audioUnlocked, setAudioUnlocked] = useState(false);
 
     useEffect(() => {
         if (active >= assets.length) {
@@ -40,6 +41,7 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
         let timeout: ReturnType<typeof setTimeout> | undefined;
 
         const handleScroll = () => {
+            setAudioUnlocked(true);
             if (timeout) {
                 clearTimeout(timeout);
             }
@@ -65,22 +67,83 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
     useEffect(() => {
         const rail = railRef.current;
         if (!rail) return;
+
         const videos = Array.from(
             rail.querySelectorAll<HTMLVideoElement>("video")
         );
+
+        const ensurePlayback = (video: HTMLVideoElement) => {
+            const playPromise = video.play();
+            if (playPromise) {
+                playPromise.catch(() => {
+                    if (!video.muted) {
+                        video.muted = true;
+                    }
+                    video.play().catch(() => {
+                        /* noop */
+                    });
+                });
+            }
+        };
+
         videos.forEach((video, index) => {
             if (index === active) {
-                const playPromise = video.play();
-                if (playPromise) {
-                    playPromise.catch(() => {
-                        video.muted = true;
-                    });
-                }
+                video.muted = !audioUnlocked;
+                ensurePlayback(video);
             } else {
-                video.pause();
+                if (!video.paused) {
+                    video.pause();
+                }
+                if (video.currentTime !== 0) {
+                    video.currentTime = 0;
+                }
+                if (!video.muted) {
+                    video.muted = true;
+                }
             }
         });
-    }, [active, assets.length]);
+    }, [active, assets.length, audioUnlocked]);
+
+    useEffect(() => {
+        if (audioUnlocked) {
+            return;
+        }
+        const unlock = () => setAudioUnlocked(true);
+        window.addEventListener("pointerup", unlock, { once: true });
+        window.addEventListener("keydown", unlock, { once: true });
+        return () => {
+            window.removeEventListener("pointerup", unlock);
+            window.removeEventListener("keydown", unlock);
+        };
+    }, [audioUnlocked]);
+
+    useEffect(() => {
+        const rail = railRef.current;
+        if (!rail) return;
+
+        const videos = Array.from(
+            rail.querySelectorAll<HTMLVideoElement>("video")
+        );
+
+        const handleVolumeChange = (event: Event) => {
+            if (!event.isTrusted) return;
+            const target = event.currentTarget as HTMLVideoElement;
+            if (target.muted && target.volume > 0) {
+                target.muted = false;
+            }
+            setAudioUnlocked(true);
+        };
+
+        videos.forEach((video) => {
+            video.addEventListener("volumechange", handleVolumeChange);
+        });
+
+        return () => {
+            videos.forEach((video) => {
+                video.removeEventListener("volumechange", handleVolumeChange);
+            });
+        };
+    }, [assets.length]);
 
     const total = assets.length;
     const current = assets[active] ?? null;
@@ -107,6 +170,7 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
     }, [current]);
 
     const scrollTo = useCallback((index: number) => {
+        setAudioUnlocked(true);
         const element = railRef.current;
         if (!element) return;
         element.scrollTo({

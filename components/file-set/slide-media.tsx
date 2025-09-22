@@ -35,9 +35,10 @@ export default function SlideMedia({ asset, index }: SlideMediaProps) {
                     key={asset.id}
                     src={asset.url}
                     playsInline
-                    controls
-                    preload="metadata"
+                    preload="auto"
+                    muted
                     className="h-full w-full object-cover"
+                    data-asset-index={index}
                 />
                 <p className="font-black text-white/50 absolute left-[38%] top-1/2">
                     @goldsyacht
