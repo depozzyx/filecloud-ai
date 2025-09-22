@@ -139,7 +139,7 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
             setAudioUnlocked(true);
         };
 
-        const longPressDuration = 300;
+        const longPressDuration = 150;
 
         videos.forEach((video) => {
             video.addEventListener("volumechange", handleVolumeChange);
@@ -179,7 +179,10 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
                     return;
                 }
                 longPressTriggered = false;
-                if (Number(video.dataset.assetIndex ?? "-1") === activeRef.current) {
+                if (
+                    Number(video.dataset.assetIndex ?? "-1") ===
+                    activeRef.current
+                ) {
                     playVideo(video);
                 }
             };
