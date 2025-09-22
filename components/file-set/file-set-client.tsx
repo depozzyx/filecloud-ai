@@ -28,6 +28,25 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
     const [toast, setToast] = useState<string | null>(null);
     const railRef = useRef<HTMLDivElement>(null);
     const [audioUnlocked, setAudioUnlocked] = useState(false);
+    const activeRef = useRef(active);
+
+    const playVideo = useCallback((video: HTMLVideoElement) => {
+        const playPromise = video.play();
+        if (playPromise) {
+            playPromise.catch(() => {
+                if (!video.muted) {
+                    video.muted = true;
+                }
+                video.play().catch(() => {
+                    /* noop */
+                });
+            });
+        }
+    }, []);
+
+    useEffect(() => {
+        activeRef.current = active;
+    }, [active]);
 
     useEffect(() => {
         if (active >= assets.length) {
@@ -72,24 +91,10 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
             rail.querySelectorAll<HTMLVideoElement>("video")
         );
 
-        const ensurePlayback = (video: HTMLVideoElement) => {
-            const playPromise = video.play();
-            if (playPromise) {
-                playPromise.catch(() => {
-                    if (!video.muted) {
-                        video.muted = true;
-                    }
-                    video.play().catch(() => {
-                        /* noop */
-                    });
-                });
-            }
-        };
-
         videos.forEach((video, index) => {
             if (index === active) {
                 video.muted = !audioUnlocked;
-                ensurePlayback(video);
+                playVideo(video);
             } else {
                 if (!video.paused) {
                     video.pause();
@@ -102,7 +107,7 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
                 }
             }
         });
-    }, [active, assets.length, audioUnlocked]);
+    }, [active, assets.length, audioUnlocked, playVideo]);
 
     useEffect(() => {
         if (audioUnlocked) {
@@ -134,16 +139,90 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
             setAudioUnlocked(true);
         };
 
+        const longPressDuration = 300;
+
         videos.forEach((video) => {
             video.addEventListener("volumechange", handleVolumeChange);
+        });
+
+        const cleanups: Array<() => void> = [];
+
+        videos.forEach((video) => {
+            let longPressTimeout: ReturnType<typeof setTimeout> | null = null;
+            let longPressTriggered = false;
+            let suppressClick = false;
+
+            const cancelLongPress = () => {
+                if (longPressTimeout) {
+                    clearTimeout(longPressTimeout);
+                    longPressTimeout = null;
+                }
+            };
+
+            const handlePointerDown = () => {
+                longPressTriggered = false;
+                suppressClick = false;
+                cancelLongPress();
+                if (video.paused) {
+                    return;
+                }
+                longPressTimeout = setTimeout(() => {
+                    longPressTriggered = true;
+                    suppressClick = true;
+                    video.pause();
+                }, longPressDuration);
+            };
+
+            const resumeIfNeeded = () => {
+                cancelLongPress();
+                if (!longPressTriggered) {
+                    return;
+                }
+                longPressTriggered = false;
+                if (Number(video.dataset.assetIndex ?? "-1") === activeRef.current) {
+                    playVideo(video);
+                }
+            };
+
+            const handlePointerUp = () => {
+                resumeIfNeeded();
+            };
+
+            const handlePointerCancel = () => {
+                resumeIfNeeded();
+                suppressClick = false;
+            };
+
+            const handleClick = () => {
+                if (suppressClick) {
+                    suppressClick = false;
+                    return;
+                }
+                video.muted = true;
+            };
+
+            video.addEventListener("pointerdown", handlePointerDown);
+            video.addEventListener("pointerup", handlePointerUp);
+            video.addEventListener("pointerleave", handlePointerCancel);
+            video.addEventListener("pointercancel", handlePointerCancel);
+            video.addEventListener("click", handleClick);
+
+            cleanups.push(() => {
+                video.removeEventListener("pointerdown", handlePointerDown);
+                video.removeEventListener("pointerup", handlePointerUp);
+                video.removeEventListener("pointerleave", handlePointerCancel);
+                video.removeEventListener("pointercancel", handlePointerCancel);
+                video.removeEventListener("click", handleClick);
+            });
         });
 
         return () => {
             videos.forEach((video) => {
                 video.removeEventListener("volumechange", handleVolumeChange);
             });
+            cleanups.forEach((cleanup) => cleanup());
         };
-    }, [assets.length]);
+    }, [assets.length, playVideo]);
 
     const total = assets.length;
     const current = assets[active] ?? null;
