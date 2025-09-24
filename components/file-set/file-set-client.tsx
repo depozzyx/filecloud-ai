@@ -91,8 +91,13 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
             rail.querySelectorAll<HTMLVideoElement>("video")
         );
 
-        videos.forEach((video, index) => {
-            if (index === active) {
+        videos.forEach((video) => {
+            const assetIndex = Number.parseInt(
+                video.dataset.assetIndex ?? "-1",
+                10
+            );
+
+            if (assetIndex === active) {
                 video.muted = !audioUnlocked;
                 playVideo(video);
             } else {
