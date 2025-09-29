@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-    title: "Gold's Yacht Filecloud",
-    description:
-        "Preview and share Gold's Yacht documents through secure Filecloud links.",
+    title: "Gold's Yacht - Viewing",
+    description: "See highlights from our unforgettable Gold's Yacht events",
 };
 
 export default function RootLayout({
