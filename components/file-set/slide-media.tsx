@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 import { ExternalLink } from "@/components/icons";
 
 import { FileAsset } from "@/lib/domain/file-set";
@@ -29,22 +31,7 @@ export default function SlideMedia({ asset, index }: SlideMediaProps) {
     }
 
     if (asset.kind === "video") {
-        return (
-            <div className="h-full w-full">
-                <video
-                    key={asset.id}
-                    src={asset.url}
-                    playsInline
-                    preload="auto"
-                    muted
-                    className="h-full w-full object-cover"
-                    data-asset-index={index}
-                />
-                <p className="font-black text-white/50 absolute left-[38%] top-1/2">
-                    @goldsyacht
-                </p>
-            </div>
-        );
+        return <VideoMedia asset={asset} index={index} />;
     }
 
     if (asset.kind === "pdf") {
@@ -89,6 +76,98 @@ export default function SlideMedia({ asset, index }: SlideMediaProps) {
                     Open
                 </a>
             </div>
+        </div>
+    );
+}
+
+function VideoMedia({ asset, index }: SlideMediaProps) {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [loadingProgress, setLoadingProgress] = useState(0);
+
+    useEffect(() => {
+        setLoadingProgress(0);
+        const video = videoRef.current;
+        if (!video) return;
+
+        const updateProgress = () => {
+            if (!video) return;
+
+            if (video.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
+                setLoadingProgress(100);
+                return;
+            }
+
+            const duration = video.duration;
+            if (!Number.isFinite(duration) || duration <= 0) {
+                setLoadingProgress(0);
+                return;
+            }
+
+            if (video.buffered.length === 0) {
+                setLoadingProgress(0);
+                return;
+            }
+
+            try {
+                const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+                const percent = Math.min(
+                    100,
+                    Math.max(0, Math.round((bufferedEnd / duration) * 100))
+                );
+                setLoadingProgress((previous) =>
+                    previous === percent ? previous : percent
+                );
+            } catch {
+                setLoadingProgress(0);
+            }
+        };
+
+        const handleCanPlay = () => {
+            setLoadingProgress(100);
+        };
+
+        video.addEventListener("progress", updateProgress);
+        video.addEventListener("loadeddata", updateProgress);
+        video.addEventListener("loadedmetadata", updateProgress);
+        video.addEventListener("canplay", handleCanPlay);
+        video.addEventListener("canplaythrough", handleCanPlay);
+
+        updateProgress();
+        if (video.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
+            setLoadingProgress(100);
+        }
+
+        return () => {
+            video.removeEventListener("progress", updateProgress);
+            video.removeEventListener("loadeddata", updateProgress);
+            video.removeEventListener("loadedmetadata", updateProgress);
+            video.removeEventListener("canplay", handleCanPlay);
+            video.removeEventListener("canplaythrough", handleCanPlay);
+        };
+    }, [asset.url]);
+
+    return (
+        <div className="relative h-full w-full">
+            <video
+                ref={videoRef}
+                key={asset.id}
+                src={asset.url}
+                playsInline
+                preload="auto"
+                muted
+                className="h-full w-full object-cover"
+                data-asset-index={index}
+            />
+            {loadingProgress < 100 && (
+                <div className="absolute inset-0 grid place-items-center bg-neutral-900/40 backdrop-blur-sm">
+                    <span className="text-sm font-semibold text-white">
+                        {loadingProgress}%
+                    </span>
+                </div>
+            )}
+            <p className="font-black text-white/50 absolute left-[38%] top-1/2">
+                @goldsyacht
+            </p>
         </div>
     );
 }
