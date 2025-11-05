@@ -164,6 +164,10 @@ function VideoMedia({ asset, index, activeIndex }: SlideMediaProps) {
         if (!video) return;
 
         video.play();
+        const timeout = setTimeout(() => {
+            video.play();
+        }, 1000);
+        return () => clearTimeout(timeout);
     }, [activeIndex, loadingProgress]);
 
     return (
