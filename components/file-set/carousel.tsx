@@ -5,6 +5,8 @@ import { forwardRef } from "react";
 import { FileAsset } from "@/lib/domain/file-set";
 
 import SlideMedia from "./slide-media";
+import { SoundMuted } from "../icons";
+import { Volume2Icon, VolumeOff } from "lucide-react";
 
 type CarouselProps = {
     assets: FileAsset[];
@@ -12,6 +14,7 @@ type CarouselProps = {
     activeBadge: string;
     countText: string;
     onDotClick: (index: number) => void;
+    volumeOff?: boolean;
 };
 
 const BADGE_LABELS: Record<FileAsset["kind"], string> = {
@@ -22,7 +25,7 @@ const BADGE_LABELS: Record<FileAsset["kind"], string> = {
 };
 
 const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carousel(
-    { assets, activeIndex, activeBadge, countText, onDotClick },
+    { assets, activeIndex, activeBadge, countText, onDotClick, volumeOff },
     ref
 ) {
     return (
@@ -37,16 +40,28 @@ const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carousel(
                         key={asset.id}
                         className="relative h-[520px] w-full flex-none snap-center bg-black"
                     >
-                        <SlideMedia asset={asset} index={index} />
+                        <SlideMedia
+                            activeIndex={activeIndex}
+                            asset={asset}
+                            index={index}
+                        />
 
-                        <div className="absolute left-6 top-6 rounded-full bg-black/60 px-2 py-1 text-[12px] text-white">
+                        <div className="absolute left-3 top-3 rounded-full bg-black/60 px-2 py-1 text-[12px] text-white">
                             {index === activeIndex
                                 ? activeBadge
                                 : BADGE_LABELS[asset.kind]}
                         </div>
 
-                        <div className="absolute right-6 top-6 rounded-full bg-black/60 px-2 py-1 text-[12px] text-white">
+                        <div className="absolute right-3 top-3 rounded-full bg-black/60 px-2 py-1 text-[12px] text-white">
                             {index === activeIndex ? countText : ""}
+                        </div>
+
+                        <div className="absolute left-3 bottom-3 rounded-full bg-black/60 px-2 py-1 text-[12px] w-[25px] h-[25px] flex items-center justify-center text-white">
+                            {volumeOff ? (
+                                <VolumeOff size={16} className="scale-150" />
+                            ) : (
+                                <Volume2Icon size={16} className="scale-150" />
+                            )}
                         </div>
 
                         {index === activeIndex && assets.length > 1 ? (

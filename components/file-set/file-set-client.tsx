@@ -60,7 +60,7 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
         let timeout: ReturnType<typeof setTimeout> | undefined;
 
         const handleScroll = () => {
-            setAudioUnlocked(true);
+            // setAudioUnlocked(true);
             if (timeout) {
                 clearTimeout(timeout);
             }
@@ -141,7 +141,7 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
             if (target.muted && target.volume > 0) {
                 target.muted = false;
             }
-            setAudioUnlocked(true);
+            // setAudioUnlocked(true);
         };
 
         const longPressDuration = 150;
@@ -193,6 +193,7 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
             };
 
             const handlePointerUp = () => {
+                setAudioUnlocked(true);
                 resumeIfNeeded();
             };
 
@@ -202,6 +203,7 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
             };
 
             const handleClick = () => {
+                setAudioUnlocked(true);
                 if (suppressClick) {
                     suppressClick = false;
                     return;
@@ -257,7 +259,7 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
     }, [current]);
 
     const scrollTo = useCallback((index: number) => {
-        setAudioUnlocked(true);
+        // setAudioUnlocked(true);
         const element = railRef.current;
         if (!element) return;
         element.scrollTo({
@@ -367,6 +369,7 @@ export default function FileSetClient({ fileSet }: FileSetClientProps) {
                 activeBadge={activeBadge}
                 countText={countText}
                 onDotClick={scrollTo}
+                volumeOff={!audioUnlocked}
             />
 
             <ActionBar

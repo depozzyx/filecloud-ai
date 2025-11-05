@@ -11,9 +11,14 @@ import { gradientForIndex } from "./gradients";
 interface SlideMediaProps {
     asset: FileAsset;
     index: number;
+    activeIndex: number;
 }
 
-export default function SlideMedia({ asset, index }: SlideMediaProps) {
+export default function SlideMedia({
+    asset,
+    index,
+    activeIndex,
+}: SlideMediaProps) {
     if (asset.kind === "image") {
         return (
             <div className="h-full w-full">
@@ -31,7 +36,9 @@ export default function SlideMedia({ asset, index }: SlideMediaProps) {
     }
 
     if (asset.kind === "video") {
-        return <VideoMedia asset={asset} index={index} />;
+        return (
+            <VideoMedia activeIndex={activeIndex} asset={asset} index={index} />
+        );
     }
 
     if (asset.kind === "pdf") {
@@ -80,7 +87,7 @@ export default function SlideMedia({ asset, index }: SlideMediaProps) {
     );
 }
 
-function VideoMedia({ asset, index }: SlideMediaProps) {
+function VideoMedia({ asset, index, activeIndex }: SlideMediaProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [loadingProgress, setLoadingProgress] = useState(0);
 
@@ -109,7 +116,9 @@ function VideoMedia({ asset, index }: SlideMediaProps) {
             }
 
             try {
-                const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+                const bufferedEnd = video.buffered.end(
+                    video.buffered.length - 1
+                );
                 const percent = Math.min(
                     100,
                     Math.max(0, Math.round((bufferedEnd / duration) * 100))
@@ -145,6 +154,17 @@ function VideoMedia({ asset, index }: SlideMediaProps) {
             video.removeEventListener("canplaythrough", handleCanPlay);
         };
     }, [asset.url]);
+
+    useEffect(() => {
+        console.log(index, activeIndex, loadingProgress);
+        if (index !== activeIndex) return;
+        if (loadingProgress < 100) return;
+
+        const video = videoRef.current;
+        if (!video) return;
+
+        video.play();
+    }, [activeIndex, loadingProgress]);
 
     return (
         <div className="relative h-full w-full">
